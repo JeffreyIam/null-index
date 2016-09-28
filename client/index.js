@@ -9,7 +9,8 @@ class App extends Component {
     this.sendMessage = this.sendMessage.bind(this)
     this.state = {
       messages: [],
-      users: []
+      users: [],
+      room: ''
     }
   }
 
@@ -18,9 +19,22 @@ class App extends Component {
     this.socket.emit('chatMessage', {
       text: this.input.value,
       name: this.name,
-      id: this.id
+      id: this.id,
+      room: this.state.room
     })
     this.input.value = ''
+  }
+
+  sendRoom(room) {
+    this.socket.emit('room', room)
+  }
+
+  joinRoom(e) {
+    e.preventDefault()
+    this.setState({room: this.roomInput.value, messages: []})
+    this.sendRoom(this.roomInput.value)
+    this.roomInput.value = ''
+    console.log(this.roomInput)
   }
 
   receiveMessage(message) {
@@ -35,7 +49,6 @@ class App extends Component {
 
   receiveUsers(users) {
     this.setState({users: users})
-    console.log(users)
   }
 
   componentWillMount () {
@@ -53,7 +66,12 @@ class App extends Component {
   render() {
     return (
       <div>
-        <div className="col-sm-6 col-sm-offset-3">
+        <div className="col-sm-3">
+          <form onSubmit={e => this.joinRoom(e)}>
+            <input className="form-control" ref={node => this.roomInput = node} placeholder="Room Name" />
+          </form>
+        </div>
+        <div className="col-sm-6">
           <div style={{height:400, overflowY:'auto'}} ref={node => this.chatContainer = node}>
             <table className="table table-striped table-hover">
               <tbody>
@@ -64,17 +82,21 @@ class App extends Component {
             </table>
           </div>
           <form onSubmit={this.sendMessage}>
-            <div className="col-sm-10" style={{paddingRight: 0}}>
-              <input className="form-control" ref={node => this.input = node} />
-            </div>
-            <div className="col-sm-2" style={{paddingLeft: 0}}>
-              <button className="btn btn-primary">Send</button>
+            <div className="row">
+              <div className="col-xs-10" style={{paddingRight: 0}}>
+                <input className="form-control" ref={node => this.input = node} />
+              </div>
+              <div className="col-xs-2" style={{paddingLeft: 0}}>
+                <button className="btn btn-primary">Send</button>
+              </div>
             </div>
           </form>
         </div>
         <div className="col-sm-3">
           <div className="panel panel-primary">
-            <div className="panel-heading">Online Users</div>
+            <div className="panel-heading">
+              Online Users {this.state.room ? ` (${this.state.room})` : ''}
+            </div>
             <div className="panel-body">
               {this.state.users.map(function(user, index) {
                 return <li key={index}>{user.name}</li>
